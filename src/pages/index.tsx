@@ -1,12 +1,21 @@
-import { GetServerSideProps } from 'next'
+import { GetStaticProps } from 'next'
 import Image from 'next/image'
 
-import AvatarImage from '../../public/images/avatar.svg'
 import { SubscribeButton } from '../components/SubscribeButton'
+import AvatarImage from '../../public/images/avatar.svg'
 import { CustomHead } from '../shared/CustomHead'
 import styles from '../styles/home.module.scss'
+import { formatPrice } from '../utils/formatPrice'
+import { stripe } from '../services/stripe'
 
-export default function Home(props) {
+interface HomeProps {
+    product: {
+        priceId: string
+        amount: string
+    }
+}
+
+export default function Home({ product }: HomeProps) {
     return (
         <>
             <CustomHead title="Home - ig.news" />
@@ -19,10 +28,10 @@ export default function Home(props) {
                     </h1>
                     <p>
                         Get access to all the publications <br />
-                        <span>for $9.90 month</span>
+                        <span>for {product.amount} month</span>
                     </p>
 
-                    <SubscribeButton />
+                    <SubscribeButton priceId={product.priceId} />
                 </section>
 
                 <Image src={AvatarImage} alt="Girl coding" />
@@ -31,8 +40,29 @@ export default function Home(props) {
     )
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
+export const getStaticProps: GetStaticProps = async () => {
+    // Utilizar a SDK do stripe facilita pegarmos os dados que precisamos da plataforma
+    // método retrieve() retorna somente um item. No caso retorna somente um preço desse produto
+    // Meio que não executa chamadas HTTP
+    const price = await stripe.prices.retrieve(
+        'price_1Js9nVHUsYat5z1Msu0Ax2II'
+        // {
+        //     retorna todas as infos do produto
+        //     expand: ['product']
+        // }
+    )
+
+    const product = {
+        priceId: price.id,
+        // Sempre é recomendável tranformar o preço para centavos
+        amount: formatPrice(price.unit_amount / 100)
+    }
+
     return {
-        props: {}
+        props: {
+            product
+        },
+        // Qual vai ser o intervalo que o next vai gerar/revalidar um novo HTML estático
+        revalidate: 60 * 60 * 24 // 24 hours
     }
 }
