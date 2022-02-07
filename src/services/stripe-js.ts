@@ -1,4 +1,4 @@
-// Lib que nos possibilitar utilizar o stripe no front(browser), somente a parte pública.
+// Lib que nos possibilita utilizar o stripe no front(browser), somente a parte pública.
 import { loadStripe } from '@stripe/stripe-js'
 
 export async function getStripeJs() {
