@@ -2,6 +2,7 @@ import { stripe } from './../../services/stripe';
 import { Stripe } from 'stripe';
 import { NextApiHandler } from 'next'
 import { Readable } from 'stream'
+import { saveSubscription } from './_lib/manageSubscription';
 
 
 // WebHooks = É uma forma de APIs de terceiros enviarem callbacks personalizados
@@ -27,7 +28,9 @@ export const config = {
 }
 
 const relevantEvents = new Set([
-    'checkout.session.completed'
+    'checkout.session.completed',
+    'customer.subscription.updated',
+    'customer.subscription.deleted',
 ])
 
 const WebHooksHandler: NextApiHandler = async (req, res) => {
@@ -40,19 +43,50 @@ const WebHooksHandler: NextApiHandler = async (req, res) => {
         try {
             event = stripe.webhooks.constructEvent(buf, secret, process.env.STRIPE_WEBHOOK_SECRET)
         } catch (err) {
-            res.status(400).end(`Webhook error: ${err.message}`)
+            return res.status(400).end(`Webhook error: ${err.message}`)
         }
 
         const { type } = event
 
         if (relevantEvents.has(type)) {
-            console.log('Evento recebido', event)
+            try {
+                switch (type) {
+                    case 'customer.subscription.updated':
+                    case 'customer.subscription.deleted':
+                        const subscription = event.data.object as Stripe.Subscription
+
+                        // Só cria no banco se for do evento created e checkout session
+                        console.log("Teste")
+                        await saveSubscription(
+                            subscription.id,
+                            subscription.customer.toString(),
+                            false
+                        )
+
+                        break
+
+                    case 'checkout.session.completed':
+                        const checkoutSession = event.data.object as Stripe.Checkout.Session
+
+                        await saveSubscription(
+                            checkoutSession.subscription.toString(),
+                            checkoutSession.customer.toString(),
+                            true
+                        )
+                        break
+
+                    default:
+                        throw new Error('Unhandled event.')
+                }
+            } catch (err) {
+                return res.json({ error: 'Webhook handler failed' })
+            }
         }
 
-        res.json({ received: true })
+        return res.json({ received: true })
     } else {
         res.setHeader('Allow', 'POST')
-        res.status(405).end('Method not allowed')
+        return res.status(405).end('Method not allowed')
     }
 }
 
