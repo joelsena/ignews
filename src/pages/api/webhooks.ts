@@ -56,7 +56,6 @@ const WebHooksHandler: NextApiHandler = async (req, res) => {
                         const subscription = event.data.object as Stripe.Subscription
 
                         // Só cria no banco se for do evento created e checkout session
-                        console.log("Teste")
                         await saveSubscription(
                             subscription.id,
                             subscription.customer.toString(),

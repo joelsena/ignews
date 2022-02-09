@@ -15,6 +15,30 @@ interface HomeProps {
     }
 }
 
+// JAMStack
+// J => Javascript(Funcionamento do app)
+// A => API(Ex: Stripe, FaunaDB, etc...)
+// M => Markup(HTML)
+
+// CMS (Content Managment System) => Sistemas que te dão toda uma interface já pronta + o painel de administração
+//  - Wordpress
+//  x Drupal
+//  x Joomla
+//  x Magento
+
+// Headless CMS (Painel de administração + API HTTP, GraphQL, SDK)
+
+// - Strapi
+// - Ghost
+// - Keystone
+
+// Pagos:
+// - GraphCMS
+// - Prismic CMS
+// - Contentful
+// - Shopify
+// - Saleor
+
 export default function Home({ product }: HomeProps) {
     return (
         <>
